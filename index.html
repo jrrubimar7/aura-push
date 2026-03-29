@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>AURA PUSH TEST</title>
+</head>
+<body style="font-family:sans-serif; padding:20px;">
+<h2>AURA PUSH TEST</h2>
+<button id="btn">Pedir permiso + token</button>
+<pre id="log"></pre>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getMessaging, getToken } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBjKF1RgTjQKpahYkoff5T0xmuDoM-84wY",
+  authDomain: "aura-46bb4.firebaseapp.com",
+  projectId: "aura-46bb4",
+  messagingSenderId: "222284414509",
+  appId: "1:222284414509:web:9739cb173f5a78de9382a4"
+};
+
+const app = initializeApp(firebaseConfig);
+const messaging = getMessaging(app);
+
+const log = (msg) => {
+  document.getElementById("log").textContent += msg + "\\n";
+};
+
+document.getElementById("btn").onclick = async () => {
+  try {
+    log("Solicitando permiso...");
+    const permission = await Notification.requestPermission();
+    log("Permiso: " + permission);
+
+    if (permission !== "granted") {
+      log("Permiso denegado");
+      return;
+    }
+
+    log("Registrando service worker...");
+    const reg = await navigator.serviceWorker.register("./firebase-messaging-sw.js");
+    log("SW registrado OK");
+
+    log("Obteniendo token...");
+    const token = await getToken(messaging, {
+      vapidKey: "BOLq0ytP1XiexsYtGD-rQdP2Zfje9aU8P2HN8wnmlYjAV29hNFB2ynafix-tY_q-6EWPSb5EGwMAp_vGhD2BOM4",
+      serviceWorkerRegistration: reg
+    });
+
+    if (token) {
+      log("TOKEN OK:");
+      log(token);
+    } else {
+      log("No se obtuvo token");
+    }
+
+  } catch (e) {
+    log("ERROR:");
+    log(e.message || String(e));
+    console.error(e);
+  }
+};
+</script>
+</body>
+</html>
