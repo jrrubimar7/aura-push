@@ -3,11 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <title>AURA PUSH TEST</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
-<body style="font-family:sans-serif; padding:20px;">
+<body style="font-family:sans-serif; padding:20px; white-space:normal;">
 <h2>AURA PUSH TEST</h2>
 <button id="btn">Pedir permiso + token</button>
-<pre id="log"></pre>
+<pre id="log" style="white-space:pre-wrap; word-break:break-word;"></pre>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -17,6 +18,7 @@ const firebaseConfig = {
   apiKey: "AIzaSyBjKF1RgTjQKpahYkoff5T0xmuDoM-84wY",
   authDomain: "aura-46bb4.firebaseapp.com",
   projectId: "aura-46bb4",
+  storageBucket: "aura-46bb4.firebasestorage.app",
   messagingSenderId: "222284414509",
   appId: "1:222284414509:web:9739cb173f5a78de9382a4"
 };
@@ -24,13 +26,17 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const messaging = getMessaging(app);
 
+const logEl = document.getElementById("log");
 const log = (msg) => {
-  document.getElementById("log").textContent += msg + "\\n";
+  logEl.textContent += msg + "\\n";
+  console.log(msg);
 };
 
 document.getElementById("btn").onclick = async () => {
   try {
-    log("Solicitando permiso...");
+    log("Origin: " + location.origin);
+    log("Path: " + location.pathname);
+
     const permission = await Notification.requestPermission();
     log("Permiso: " + permission);
 
@@ -39,11 +45,16 @@ document.getElementById("btn").onclick = async () => {
       return;
     }
 
-    log("Registrando service worker...");
-    const reg = await navigator.serviceWorker.register("./firebase-messaging-sw.js");
-    log("SW registrado OK");
+    const swUrl = "/aura-push/firebase-messaging-sw.js";
+    log("Registrando SW: " + swUrl);
 
-    log("Obteniendo token...");
+    const reg = await navigator.serviceWorker.register(swUrl, {
+      scope: "/aura-push/"
+    });
+
+    await navigator.serviceWorker.ready;
+    log("SW registrado OK. Scope: " + reg.scope);
+
     const token = await getToken(messaging, {
       vapidKey: "BOLq0ytP1XiexsYtGD-rQdP2Zfje9aU8P2HN8wnmlYjAV29hNFB2ynafix-tY_q-6EWPSb5EGwMAp_vGhD2BOM4",
       serviceWorkerRegistration: reg
@@ -55,10 +66,10 @@ document.getElementById("btn").onclick = async () => {
     } else {
       log("No se obtuvo token");
     }
-
   } catch (e) {
-    log("ERROR:");
-    log(e.message || String(e));
+    log("ERROR NAME: " + (e?.name || ""));
+    log("ERROR CODE: " + (e?.code || ""));
+    log("ERROR MSG: " + (e?.message || String(e)));
     console.error(e);
   }
 };
